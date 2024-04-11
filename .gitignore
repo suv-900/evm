@@ -1,4 +1,6 @@
 HELP.md
+note.txt
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -32,7 +34,3 @@ build/
 ### VS Code ###
 .vscode/
 
-note
-mvnw.cmd
-mvnw
-HELP.md

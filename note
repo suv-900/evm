@@ -1,8 +1,0 @@
--Hosts,Customers,Admins
-
-Hosts can create events and allocate seats for customers.
-Host can adjust number of seats
-
-Customers can choose between events and book their seats
-
-Admins can manage everything
