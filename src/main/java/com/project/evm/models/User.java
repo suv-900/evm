@@ -8,43 +8,41 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
-@Table(name="host")
-public class Host {
-    
+@Table(name="users")
+public class User {
+   
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy=GenerationType.IDENTITY) 
     private long id;
-    
-    @Column(name="name",nullable=false)
+
+    @NotBlank(message="user name cannot be blank.")
+    @Column(name="name",nullable=false,unique=true)
     private String name;
-    
+
+    @Email(message = "email is not valid.")
     @Column(name="email",nullable=false)
     private String email;
-    
+
+    @NotBlank(message="user password cannot be blank.")
     @Column(name="password",nullable=false)
     private String password;
-    
-    @Column(name="phone",nullable=true)
-    private String phone;
-    
+
     @Column(name="description",nullable=true)
     private String description;
-    
-    @Column(name="events",nullable=true)
-    private List<Event> events;
-    
-    public Host(){}
+
+    public User(){}
 
     @Override
     public String toString(){
         return "Host: id = "+this.id+" name = "+this.name+" email = "+this.email+" password = "+
-        this.password+" phone = "+this.phone+" description = "+this.description;
+        this.password+"description = "+this.description;
     }
-    
 }
