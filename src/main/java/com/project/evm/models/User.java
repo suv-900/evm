@@ -1,5 +1,6 @@
 package com.project.evm.models;
 
+import java.io.Serializable;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -17,7 +18,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name="users")
-public class User {
+public class User implements Serializable{
    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY) 
