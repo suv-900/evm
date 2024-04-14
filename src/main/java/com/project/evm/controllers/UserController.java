@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.google.gson.Gson;
 import com.project.evm.models.User;
 import com.project.evm.models.UserLogin;
 import com.project.evm.services.TokenService;
@@ -100,9 +103,29 @@ public class UserController {
         }
     }
 
-    @PostMapping("/update/{id}")
-    public void updateUser(@RequestHeader(value = "Token",required = true) String token,@RequestBody User user){
+    @PostMapping("/update")
+    public ResponseEntity<String> updateUser(@RequestHeader(value = "Token",required = true) String token,
+            @RequestBody User userUpdates){
+        try{
+            String username = tokenService.extractUsername(token);
+            
+            userUpdates.setName(username);
+            
+            userService.updateUser(userUpdates);
 
+            return new ResponseEntity<>(HttpStatus.OK);
+        }catch(TokenExpiredException e){
+            log.error(e.getMessage());
+            return new ResponseEntity<>("Token expired.",HttpStatus.UNAUTHORIZED);
+        
+        }catch(JWTVerificationException e) {
+            log.error(e.getMessage());
+            return new ResponseEntity<>("Token malformed.",HttpStatus.BAD_REQUEST); 
+        
+        }catch(Exception e){
+            log.error(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } 
     }
 
     @ResponseStatus(HttpStatus.UNAUTHORIZED)

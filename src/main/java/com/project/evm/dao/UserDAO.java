@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import com.project.evm.exceptions.UserNotFoundException;
 import com.project.evm.models.User;
 
 @Repository
@@ -18,7 +19,7 @@ public class UserDAO {
     @Autowired
     private SessionFactory sessionFactory;
 
-    public User addUser(User user){
+    public User addUser(User user)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
         Transaction tx = null;
         
@@ -48,11 +49,19 @@ public class UserDAO {
         User user = null;
 
         try{
+            String query = "select name,email,description from users where id = :id";
+
             transaction = session.beginTransaction();
 
-            user = session.get(User.class,userID);
+            user = session.createQuery(query,User.class)
+                .setParameter("id",userID)
+                .uniqueResult();
 
             transaction.commit();
+
+            if(user == null){
+                throw new UserNotFoundException();
+            }
         }catch(Exception e){
             if(transaction != null){
                 transaction.rollback();
@@ -76,7 +85,9 @@ public class UserDAO {
             
             transaction = session.beginTransaction();
 
-            dbPassword = session.createQuery(query,String.class).uniqueResult();
+            dbPassword = session.createQuery(query,String.class)
+                .setParameter("name",name)
+                .uniqueResult();
 
             transaction.commit();
         }catch(Exception e){
@@ -114,7 +125,7 @@ public class UserDAO {
         log.info("User removed: "+user.getName());
     }
 
-    public User updateUser(User user)throws Exception{
+    public void updateUser(User user)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
         Transaction tx = null;
         User updatedUser = null;
@@ -134,8 +145,7 @@ public class UserDAO {
         }finally{
             session.close();     
         }
-        log.info("User updated: "+user.getName());
-        return updatedUser;
+        log.info("User updated: "+updatedUser.toString());
     }
 
 }
