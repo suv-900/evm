@@ -1,5 +1,8 @@
 package com.project.evm.dao;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -8,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import com.project.evm.exceptions.UserNotFoundException;
-import com.project.evm.models.User;
+import com.project.evm.models.UserEntity;
 
+//count,exists,findAllById,deleteAllById,findById
 @Repository
 public class UserDAO {
     
@@ -19,7 +22,7 @@ public class UserDAO {
     @Autowired
     private SessionFactory sessionFactory;
 
-    public User addUser(User user)throws Exception{
+    public UserEntity addUser(UserEntity user)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
         Transaction tx = null;
         
@@ -43,38 +46,51 @@ public class UserDAO {
         return user;
     }
 
-    public User getUserById(int userID){
+    public boolean exists(UserEntity user)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
-        Transaction transaction = null;
-        User user = null;
+        
+        String query = "SELECT EXISTS(SELECT 1 FROM users WHERE name = :username OR email = :email) AS user_exists";
 
-        try{
-            String query = "select name,email,description from users where id = :id";
+        Boolean exists = session.createQuery(query,Boolean.class)
+            .setParameter("username",user.getName())
+            .setParameter("email",user.getEmail()) 
+            .getSingleResult();
+        
+        return exists;
+    }
 
-            transaction = session.beginTransaction();
+    public UserEntity findById(int userID)throws Exception{
+        Session session = this.sessionFactory.getCurrentSession();
 
-            user = session.createQuery(query,User.class)
+        String query = "SELECT name,email,description FROM users WHERE id = :id";
+
+        UserEntity user = session.createQuery(query,UserEntity.class)
                 .setParameter("id",userID)
                 .uniqueResult();
-
-            transaction.commit();
-
-            if(user == null){
-                throw new UserNotFoundException();
-            }
-        }catch(Exception e){
-            if(transaction != null){
-                transaction.rollback();
-            }
-            session.close();
-            throw e;
-        }finally{
-            session.close();
-        }
         
         return user; 
     }
     
+    public List<UserEntity> findAllById(Iterable<Integer> idList)throws Exception{
+        List<UserEntity> userList = new LinkedList<>();
+
+        Session session = this.sessionFactory.getCurrentSession();
+        
+        String query = "SELECT name,email,description FROM users WHERE id = :id";
+
+        idList.forEach((id) -> {
+            UserEntity user = session.createQuery(query,UserEntity.class)
+                .setParameter("id",id)    
+                .getSingleResultOrNull();
+
+            if(user != null){
+                userList.add(user);
+            }
+        });
+
+        return userList;
+    }
+
     public String getPasswordByUsername(String name)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
         Transaction transaction = null;
@@ -103,7 +119,7 @@ public class UserDAO {
         return dbPassword;
     }
     //notify other services [cascade] 
-    public void deleteUser(User user)throws Exception{
+    public void deleteUser(UserEntity user)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
         Transaction tx = null;
 
@@ -125,10 +141,10 @@ public class UserDAO {
         log.info("User removed: "+user.getName());
     }
 
-    public void updateUser(User user)throws Exception{
+    public void updateUser(UserEntity user)throws Exception{
         Session session = this.sessionFactory.getCurrentSession();
         Transaction tx = null;
-        User updatedUser = null;
+        UserEntity updatedUser = null;
 
         try{
             tx = session.beginTransaction();

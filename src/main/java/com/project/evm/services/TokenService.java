@@ -26,7 +26,7 @@ public class TokenService {
         verifier = JWT.require(algorithm).build();
     }
 
-    public String generateToken(String username)throws JWTCreationException,IllegalArgumentException{
+    public String generateToken(String username)throws JWTCreationException,Exception{
         return JWT.create()
             .withIssuer("evm")
             .withClaim("username",username)

@@ -18,7 +18,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name="users")
-public class User implements Serializable{
+public class UserEntity implements Serializable{
    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY) 
@@ -29,7 +29,7 @@ public class User implements Serializable{
     private String name;
 
     @Email(message = "email is not valid.")
-    @Column(name="email",nullable=false)
+    @Column(name = "email",nullable = false,unique = true)
     private String email;
 
     @NotBlank(message="user password cannot be blank.")
@@ -39,7 +39,7 @@ public class User implements Serializable{
     @Column(name="description",nullable=true)
     private String description;
 
-    public User(){}
+    public UserEntity(){}
 
     @Override
     public String toString(){

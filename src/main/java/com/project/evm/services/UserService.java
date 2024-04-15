@@ -1,15 +1,15 @@
 package com.project.evm.services;
 
-import java.net.PasswordAuthentication;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.project.evm.dao.UserDAO;
-import com.project.evm.exceptions.UserNotFoundException;
-import com.project.evm.models.User;
+import com.project.evm.models.UserEntity;
 import com.project.evm.models.UserLogin;
+import com.project.evm.repository.UserRepository;
 import com.project.evm.utils.PasswordHasher;
 
 public class UserService {
@@ -19,9 +19,12 @@ public class UserService {
     @Autowired
     private PasswordHasher hasher;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private final static Logger log = LoggerFactory.getLogger(UserService.class);
 
-    public void addUser(User user)throws Exception{
+    public void addUser(UserEntity user)throws Exception{
         String hashedPassword = hasher.hashPassword(user.getPassword());
         
         user.setPassword(hashedPassword);
@@ -36,15 +39,36 @@ public class UserService {
 
         return matches;
     }
-    public User getUser(int userID)throws UserNotFoundException,Exception{
-        return userDao.getUserById(userID);
+    public UserEntity getUser(int userID)throws Exception{
+        return userDao.findById(userID);
     }
 
-    public User updateUser(User user)throws Exception{
-        return userDao.updateUser(user);
+    public void updateUser(UserEntity user)throws Exception{
+        userDao.updateUser(user);
     }
 
-    public void deleteUser(User user)throws Exception{
+    public void deleteUser(UserEntity user)throws Exception{
         userDao.deleteUser(user);
+    }
+
+    public void deleteUserByUsername(String username)throws Exception{
+        userRepository.deleteUserByUsername(username);
+    }
+
+    public boolean existsByUsername(String username)throws Exception{
+        return userRepository.existsByUsername(username);
+    }
+
+    public boolean existsByEmail(String email)throws Exception{
+        return userRepository.existsByEmail(email);
+    }
+
+    public boolean exists(UserEntity user)throws Exception{
+        return userDao.exists(user);
+    }
+
+    //for retriving users associated with a event
+    public List<UserEntity> findAllById(Iterable<Integer> idList)throws Exception{
+        return userDao.findAllById(idList);    
     }
 }

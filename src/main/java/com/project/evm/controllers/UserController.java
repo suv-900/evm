@@ -25,6 +25,7 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.project.evm.exceptions.UnauthorizedUserException;
+import com.project.evm.exceptions.UserExistsException;
 import com.project.evm.exceptions.UserNotFoundException;
 import com.project.evm.models.UserEntity;
 import com.project.evm.models.UserLogin;
@@ -49,9 +50,17 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/create")
     public void createUser(@Valid @RequestBody UserEntity user,HttpServletResponse response)
-        throws JWTCreationException,Exception{
+        throws UserExistsException,JWTCreationException,Exception{
         
+        // if(userService.existsByUsername(user.getName()) || userService.existsByEmail(user.getEmail())){
+        //     throw new UserExistsException("User already exists cannot create another.");
+        // }
+
         //Generic Ex
+        if(userService.exists(user)){
+            throw new UserExistsException("User already exists cannot create another.");
+        }
+
         userService.addUser(user);
 
         //JWTCreationEx,IllegalArgEx
@@ -60,18 +69,23 @@ public class UserController {
         response.addHeader("Token",token);
     }
 
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(UserExistsException.class)
+    public String handleUserExistsException(UserExistsException e){
+        log.error(e.getMessage());
+        return e.getMessage();
+    }
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public void handleException(Exception e){
         log.error(e.getMessage());
-        e.printStackTrace();
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(JWTCreationException.class)
     public void handleJWTCreationException(JWTCreationException e){
         log.error(e.getMessage());
-        e.printStackTrace();
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
