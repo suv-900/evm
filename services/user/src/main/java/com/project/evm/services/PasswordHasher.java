@@ -1,12 +1,13 @@
-package com.project.evm.utils;
+package com.project.evm.services;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.stereotype.Service;
 // import org.slf4j.Logger;
 // import org.slf4j.LoggerFactory;
-
+@Service
 public class PasswordHasher {
     // private final static Logger log = LoggerFactory.getLogger(PasswordHasher.class);
    

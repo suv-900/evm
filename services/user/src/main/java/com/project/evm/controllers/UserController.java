@@ -2,15 +2,12 @@ package com.project.evm.controllers;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,19 +24,20 @@ import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.project.evm.exceptions.UnauthorizedUserException;
 import com.project.evm.exceptions.UserExistsException;
 import com.project.evm.exceptions.UserNotFoundException;
-import com.project.evm.models.UserEntity;
-import com.project.evm.models.UserLogin;
+import com.project.evm.models.dto.UserDTO;
+import com.project.evm.models.dto.UserLogin;
+import com.project.evm.models.entities.UserEntity;
 import com.project.evm.services.TokenService;
 import com.project.evm.services.UserService;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 @RequestMapping("/users")
 @RestController
 public class UserController {
-    private final static Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -49,24 +47,74 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/create")
-    public void createUser(@Valid @RequestBody UserEntity user,HttpServletResponse response)
+    public String createUser(@Valid @RequestBody UserEntity user,HttpServletResponse response)
         throws UserExistsException,JWTCreationException,Exception{
         
-        // if(userService.existsByUsername(user.getName()) || userService.existsByEmail(user.getEmail())){
-        //     throw new UserExistsException("User already exists cannot create another.");
-        // }
-
-        //Generic Ex
         if(userService.exists(user)){
             throw new UserExistsException("User already exists cannot create another.");
         }
 
         userService.addUser(user);
 
-        //JWTCreationEx,IllegalArgEx
         String token = tokenService.generateToken(user.getName());
-
         response.addHeader("Token",token);
+
+        return "User created.";
+    }
+
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/login")
+    public void loginUser(@Valid @RequestBody UserLogin user,HttpServletResponse response)throws Exception,
+    UnauthorizedUserException,UserNotFoundException{
+        boolean isOK = userService.loginUser(user);
+
+        if(!isOK){
+            throw new UnauthorizedUserException("Credentials dont match.");
+        }
+
+        String token = tokenService.generateToken(user.getName());
+        response.addHeader("Token",token);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/update")
+    public void updateUser(@RequestHeader(value = "Token",required = true) String token,
+            @RequestBody UserEntity userUpdates)throws Exception,TokenExpiredException,JWTVerificationException{
+        
+        String username = tokenService.extractUsername(token);
+
+        userUpdates.setName(username);
+            
+        userService.updateUser(userUpdates);
+    }
+ 
+    @ResponseStatus(HttpStatus.FOUND)
+    @GetMapping("/getUser/{id}")
+    public UserDTO getUser(@PathVariable("id")Long id)throws Exception,UserNotFoundException{
+        return userService.getUserById(id);
+    }
+
+    // @ResponseStatus(HttpStatus.OK)
+    // @DeleteMapping("/delete")
+    // public void deleteUser(@RequestHeader(value = "Token",required = true)String token)
+    //     throws TokenExpiredException,JWTVerificationException,Exception{
+
+    //     String username = tokenService.extractUsername(token);
+        
+    //     userService.deleteUserByUsername(username);
+    // }
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(UserNotFoundException.class)
+    public String handleUserNotFoundException(UserNotFoundException e){
+        log.error(e.getMessage());
+        return e.getMessage();
+    }
+
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public void handleMethodNotSupportedException(HttpRequestMethodNotSupportedException e){
+        log.error(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.CONFLICT)
@@ -99,51 +147,16 @@ public class UserController {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName,errorMessage);
         });
-
         log.warn(errors.toString());
         return errors;
     }
-
-    @ResponseStatus(HttpStatus.OK)
-    @PostMapping("/login")
-    public void loginUser(@Valid @RequestBody UserLogin user,HttpServletResponse response)throws Exception,UnauthorizedUserException{
-        //IllegalArgsEx , GenericEx
-        boolean isOK = userService.loginUser(user);
-
-        if(!isOK){
-            throw new UnauthorizedUserException("Credentials dont match.");
-        }
-
-        String token = tokenService.generateToken(user.getName());
-
-        response.addHeader("Token",token);
-    }
-
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(UnauthorizedUserException.class)
     public String handleUnauthorizedUserException(UnauthorizedUserException e){
         log.error(e.getMessage());
         return e.getMessage();
     }
-
-
-    // private String verifyTokenAndGetUsername(String token)throws TokenExpiredException,JWTVerificationException{
-    //     return tokenService.extractUsername(token);
-    // }
-
-    @ResponseStatus(HttpStatus.OK)
-    @PostMapping("/update")
-    public void updateUser(@RequestHeader(value = "Token",required = true) String token,
-            @RequestBody UserEntity userUpdates)throws Exception,TokenExpiredException,JWTVerificationException{
-        
-        String username = tokenService.extractUsername(token);
-
-        userUpdates.setName(username);
-            
-        userService.updateUser(userUpdates);
-    }
-
-   @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(JWTVerificationException.class)
     public String handleJWTVerificationException(JWTVerificationException e){
         log.error(e.getMessage());
@@ -165,31 +178,4 @@ public class UserController {
     }
 
  
-    @ResponseStatus(HttpStatus.FOUND)
-    @GetMapping("/getUser/{id}")
-    public UserEntity getUser(@PathVariable("id")int id)throws Exception,UserNotFoundException{
-        UserEntity user = userService.getUser(id);
-
-        if( user == null ){
-            throw new UserNotFoundException();
-        }
-        return user;
-    }
-
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(UserNotFoundException.class)
-    public String handleUserNotFoundException(UserNotFoundException e){
-        log.error(e.getMessage());
-        return e.getMessage();
-    }
-
-    @ResponseStatus(HttpStatus.OK)
-    @DeleteMapping("/delete")
-    public void deleteUser(@RequestHeader(value = "Token",required = true)String token)
-        throws TokenExpiredException,JWTVerificationException,Exception{
-
-        String username = tokenService.extractUsername(token);
-        
-        userService.deleteUserByUsername(username);
-    }
 }

@@ -2,6 +2,8 @@ package com.project.evm.services;
 
 import java.util.Date;
 
+import org.springframework.stereotype.Service;
+
 // import org.slf4j.Logger;
 // import org.slf4j.LoggerFactory;
 
@@ -13,9 +15,10 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 
+@Service
 public class TokenService {
     // private final static Logger log = LoggerFactory.getLogger(TokenService.class);
-    private final static String serverSecret = "server_secret";
+    private final static String serverSecret = "host-service";
     private final static long EXPIRATION_TIME = 864_000_000; //10days
     
     private static Algorithm algorithm = null;
@@ -28,7 +31,7 @@ public class TokenService {
 
     public String generateToken(String username)throws JWTCreationException,Exception{
         return JWT.create()
-            .withIssuer("evm")
+            .withIssuer("evm-host")
             .withClaim("username",username)
             .withIssuedAt(new Date())
             .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME))

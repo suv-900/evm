@@ -1,7 +1,6 @@
-package com.project.evm.models;
+package com.project.evm.models.entities;
 
 import java.io.Serializable;
-import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,9 +13,9 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity
 @Getter
 @Setter
+@Entity(name="users")
 @Table(name="users")
 public class UserEntity implements Serializable{
    
@@ -28,6 +27,7 @@ public class UserEntity implements Serializable{
     @Column(name="name",nullable=false,unique=true)
     private String name;
 
+    @NotBlank(message="email cannot be blank.")
     @Email(message = "email is not valid.")
     @Column(name = "email",nullable = false,unique = true)
     private String email;
@@ -39,11 +39,4 @@ public class UserEntity implements Serializable{
     @Column(name="description",nullable=true)
     private String description;
 
-    public UserEntity(){}
-
-    @Override
-    public String toString(){
-        return "Host: id = "+this.id+" name = "+this.name+" email = "+this.email+" password = "+
-        this.password+"description = "+this.description;
-    }
 }

@@ -1,23 +1,13 @@
-package com.project.evm.models;
+package com.project.evm.models.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class UserLogin {
-    
     @NotBlank(message = "Username cannot be blank.")
     private String name;
 
     @NotBlank(message = "Password cannot be blank.")
     private String password;
-
-    public UserLogin(){}
-
-    @Override
-    public String toString(){
-        return "UserLogin: "+this.name+" "+this.password;
-    }
 }
