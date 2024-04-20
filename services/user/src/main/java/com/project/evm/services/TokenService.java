@@ -14,11 +14,14 @@ import com.auth0.jwt.exceptions.AlgorithmMismatchException;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.project.evm.exceptions.InValidTokenException;
 
 @Service
 public class TokenService {
     // private final static Logger log = LoggerFactory.getLogger(TokenService.class);
     private final static String serverSecret = "host-service";
+    private final static String adminServerSecret = "admin-service";
     private final static long EXPIRATION_TIME = 864_000_000; //10days
     
     private static Algorithm algorithm = null;
@@ -42,5 +45,20 @@ public class TokenService {
         return verifier.verify(token)
             .getClaim("username")
             .toString();
+    }
+
+    public void verifyAdminToken(String token)throws JWTVerificationException,TokenExpiredException{
+        Algorithm algorithm = Algorithm.HMAC256(adminServerSecret.getBytes());
+        JWTVerifier verifier = JWT.require(algorithm).build();
+
+        DecodedJWT decoded = verifier.verify(token);
+
+        String issuer = decoded.getIssuer();
+
+        if(!issuer.equals("adminService")){
+            throw new InValidTokenException("Unknown token issuer:"+issuer);
+        }
+        //TODO store adminName
+        // String adminName = decoded.getClaim("adminName").toString();
     }
 }

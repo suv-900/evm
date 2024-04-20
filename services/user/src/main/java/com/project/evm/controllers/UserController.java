@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.project.evm.exceptions.InValidTokenException;
 import com.project.evm.exceptions.UnauthorizedUserException;
 import com.project.evm.exceptions.UserExistsException;
 import com.project.evm.exceptions.UserNotFoundException;
@@ -95,6 +96,14 @@ public class UserController {
         return userService.getUserById(id);
     }
 
+    @GetMapping("/protected/get_user_details/{id}")
+    public UserEntity getUserDetails(@PathVariable("id")Long id,@RequestHeader(value = "Token",required = true)String token)
+    throws InValidTokenException,TokenExpiredException,JWTVerificationException,Exception
+    {
+        tokenService.verifyAdminToken(token);
+        return userService.getUserFullDetails(id);
+    }
+
     // @ResponseStatus(HttpStatus.OK)
     // @DeleteMapping("/delete")
     // public void deleteUser(@RequestHeader(value = "Token",required = true)String token)
@@ -104,6 +113,13 @@ public class UserController {
         
     //     userService.deleteUserByUsername(username);
     // }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(InValidTokenException.class)
+    public void handleInvalidTokenException(InValidTokenException e){
+        log.error(e.getMessage());
+    }
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(UserNotFoundException.class)
     public String handleUserNotFoundException(UserNotFoundException e){
